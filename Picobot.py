@@ -5,6 +5,8 @@
 
 # User interface! So things like:
 # Place to put in Picobot instructions
+
+# If there's not a way to add a text input box, use user input and have a add instructions button
 # Way to restart
 # Place that displays errors (like oops I can't go that way)
 # Add a menu to choose which map you want
@@ -20,12 +22,11 @@ POSSIBLE_MOVES = ["N", "E", "W", "S"]
 # These represent levels/states so the computer knows what screen to display
 ZOOM_ZOOM = 1
 
-ALL_DONE = 2
+PAUSE = 1.5
 
-PAUSE = 10
+ALL_DONE = 
 
-SCREEN_WIDTH = 25 * 33
-SCREEN_HEIGHT = 25 * 33
+BUTTON_SPACE = 300
 
 # Note: current images of CRATE and BOT are each 64px by 64px
 SCALING_BOX = 1 / 2
@@ -107,16 +108,20 @@ class MyGame(arcade.Window):
 
     def __init__(self, myMap, myRules):
         """ Initializer """
-        # Call the parent class initializer
-        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, "Picobot!")
+
 
         self.myMap = myMap.copy()
         self.myRules = myRules
         self.myMapCopy = myMap.copy()
 
-        # Manage the view port
-        self.view_left = 0
-        self.view_bottom = 0
+        self.NUM_ROWS = len(self.myMap)
+        self.NUM_COLUMNS = len(self.myMap[0])
+        # Call the parent class initializer
+
+        self.WORLD_WIDTH = BOX_SIZE * (self.NUM_ROWS)
+        self.WORLD_HEIGHT = BOX_SIZE * (self.NUM_COLUMNS) + BUTTON_SPACE
+        super().__init__(self.WORLD_WIDTH, self.WORLD_HEIGHT, "Picobot!")
+
 
         self.background = None
 
@@ -126,11 +131,6 @@ class MyGame(arcade.Window):
         #self.randomize()
         self.rules = self.convertPicobotToPython()
 
-        self.NUM_ROWS = len(self.myMap)
-        self.NUM_COLUMNS = len(self.myMap[0])
-
-        self.WORLD_WIDTH = BOX_SIZE * (self.NUM_ROWS)
-        self.WORLD_HEIGHT = BOX_SIZE * (self.NUM_COLUMNS)
 
         # This number is in x,y coordinates
         self.robot_x = None
