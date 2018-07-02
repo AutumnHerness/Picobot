@@ -12,7 +12,6 @@
 
 import arcade
 import random
-import time
 
 # --- Constants ---
 POSSIBLE_CONDITIONS = ["xxxx", "Nxxx", "NExx", "NxWx", "xxxS", "xExS", "xxWS", "xExx", "xxWx"]
@@ -29,8 +28,7 @@ SCREEN_WIDTH = 25 * 33
 SCREEN_HEIGHT = 25 * 33
 
 # Note: current images of CRATE and BOT are each 64px by 64px
-SPRITE_SCALING_BOX = 1 / 2
-SPRITE_SCALING_PLAYER = 1 / 2
+SCALING_BOX = 1 / 2
 
 BOX_SIZE = 64 // 2
 
@@ -112,18 +110,9 @@ class MyGame(arcade.Window):
         # Call the parent class initializer
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, "Picobot!")
 
-        self.myMap = myMap
+        self.myMap = myMap.copy()
         self.myRules = myRules
-
-        # Sprite lists
-        self.player_list = None
-        self.wall_list = None
-
-        # Set up player
-        self.player_sprite = None
-
-        # physics engine
-        self.physics_engine = None
+        self.myMapCopy = myMap.copy()
 
         # Manage the view port
         self.view_left = 0
@@ -143,12 +132,9 @@ class MyGame(arcade.Window):
         self.WORLD_WIDTH = BOX_SIZE * (self.NUM_ROWS)
         self.WORLD_HEIGHT = BOX_SIZE * (self.NUM_COLUMNS)
 
-
         # This number is in x,y coordinates
         self.robot_x = None
         self.robot_y = None
-
-        MOVEMENT_SPEED = BOX_SIZE
 
 
     #-----------Coordinate system conversion functions-------------
@@ -202,6 +188,8 @@ class MyGame(arcade.Window):
         # Set opening screen
         self.current_state = ZOOM_ZOOM
 
+        # Reset start map
+        self.myMap = self.myMapCopy.copy()
 
         rand_x = random.randint(1,len(self.myMap[0]) - 2)
         rand_y = random.randint(1, len(self.myMap) - 2)
@@ -216,13 +204,6 @@ class MyGame(arcade.Window):
         self.robot_x, self.robot_y = coord
         row, col = self.xyToRowCol(coord)
         self.myMap[row][col] = -1
-
-        # Create the maze
-        for row in range(len(self.myMap)):
-            for col in range(len(self.myMap[0])):
-                if self.myMap[row][col] == WALL:
-                    x, y = self.rowColToPixelPos([row, col])
-                    arcade.draw_rectangle_filled(x, y, BOX_SIZE, BOX_SIZE, arcade.color.BLUE)
 
 
     def on_draw(self):
@@ -242,12 +223,17 @@ class MyGame(arcade.Window):
                 if self.myMap[row][col] == VISITED:
                     x, y = self.rowColToPixelPos([row, col])
                     arcade.draw_rectangle_filled(x, y, BOX_SIZE, BOX_SIZE, arcade.color.GREEN)
+
                 elif self.myMap[row][col] == WALL:
                     x, y = self.rowColToPixelPos([row, col])
-                    arcade.draw_rectangle_filled(x, y, BOX_SIZE, BOX_SIZE, arcade.color.BLUE)
+                    wall_image = arcade.load_texture(CRATE)
+                    arcade.draw_texture_rectangle(x, y, SCALING_BOX * wall_image.width, SCALING_BOX * wall_image.height, wall_image)
+
                 elif self.myMap[row][col] == ROBOT:
                     x, y = self.rowColToPixelPos([row, col])
-                    arcade.draw_rectangle_filled(x, y, BOX_SIZE, BOX_SIZE, arcade.color.RED)
+                    bot_image = arcade.load_texture(BOT)
+                    arcade.draw_texture_rectangle(x, y, SCALING_BOX * bot_image.width, SCALING_BOX * bot_image.height, bot_image)
+
         
         # Draw the Grid
         # Draw horizontal lines
@@ -267,11 +253,11 @@ class MyGame(arcade.Window):
     def update(self, delta_time):
         """updates the position of picobot"""
 
-        # convert coord to x,y
-        coord = (self.robot_x, self.robot_y)
-        self.markVisited(coord)
-
-        self.step()
+        if self.current_state == ZOOM_ZOOM:    
+            # convert coord to x,y
+            coord = (self.robot_x, self.robot_y)
+            self.markVisited(coord)
+            self.step()
 
         if self.allVisited():
             self.current_state = ALL_DONE
