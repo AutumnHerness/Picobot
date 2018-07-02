@@ -34,6 +34,10 @@ SPRITE_SCALING_PLAYER = 1 / 2
 
 BOX_SIZE = 64 // 2
 
+ROBOT = -1
+WALL = 1
+VISITED = 2
+
 MAZE_MAP = [
    [ 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ],
    [ 1,0,0,1,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,1,0,1 ],
@@ -139,7 +143,47 @@ class MyGame(arcade.Window):
         self.WORLD_WIDTH = BOX_SIZE * (self.NUM_ROWS)
         self.WORLD_HEIGHT = BOX_SIZE * (self.NUM_COLUMNS)
 
+
+        # This number is in x,y coordinates
+        self.robot_x = None
+        self.robot_y = None
+
         MOVEMENT_SPEED = BOX_SIZE
+
+
+    #-----------Coordinate system conversion functions-------------
+    def xyToRowCol(self, coordinate):
+        """Takes in a (x, y) and returns the equivalent (row, col)"""
+        row = int(len(self.myMap) - 1 - coordinate[1])
+        col = int(coordinate[0])
+        return (row, col)
+
+    def pixelPosToxy(self, coordinate):
+        """Takes in (center_x, center_y) and return (x, y)"""
+        return list(map((lambda S: int((S - (BOX_SIZE / 2)) / BOX_SIZE )), coordinate))
+
+    def pixelPosToRowCol(self, coordinate):
+        """Takes in (center_x, center_y) and returns (row, col)"""
+        xy = self.pixelPosToxy(coordinate)
+        return self.xyToRowCol(xy)
+
+    def xyToPixelPos(self, coordinate):
+        """Takes in (x, y) and returns (center_x, center_y)"""
+        pixel_x = BOX_SIZE // 2 + coordinate[0] * BOX_SIZE
+        pixel_y = BOX_SIZE // 2 + coordinate[1] * BOX_SIZE
+        return (pixel_x, pixel_y)
+
+    def rowColToPixelPos(self, coordinate):
+        """Takes in a (row, col) and returns (center_x, center_y)"""
+        row, col = coordinate
+        pixel_x = col * BOX_SIZE + BOX_SIZE // 2
+        pixel_y = (len(self.myMap[0]) - 1 - row) * BOX_SIZE + BOX_SIZE // 2
+        return (pixel_x, pixel_y)
+
+    def rowColToxy(self, coordinate):
+        """Takes in a (row, col) and returns (x, y)"""
+        pixel = self.rowColToPixelPos(coordinate)
+        return self.pixelPosToxy(pixel)
 
     def randomize(self):
         """Fill self.rules!"""
@@ -155,20 +199,10 @@ class MyGame(arcade.Window):
         # Set the background color
         arcade.set_background_color((135, 205, 255))
 
-        # Reset the view port
-        self.view_left = 0
-        self.view_bottom = 0
-
         # Set opening screen
         self.current_state = ZOOM_ZOOM
 
-        # Sprite lists
-        self.player_list = arcade.SpriteList()
-        self.wall_list = arcade.SpriteList()
 
-
-        # Create the player
-        self.player_sprite = arcade.Sprite(BOT, SPRITE_SCALING_PLAYER)
         rand_x = random.randint(1,len(self.myMap[0]) - 2)
         rand_y = random.randint(1, len(self.myMap) - 2)
         
@@ -179,21 +213,16 @@ class MyGame(arcade.Window):
             rand_y = random.randint(1, len(self.myMap) - 2)
             coord = (rand_x, rand_y)
         
-        self.player_sprite.center_x, self.player_sprite.center_y = self.xyToPixelPos(coord)
-        self.player_list.append(self.player_sprite)
-        self.markVisited(coord)
+        self.robot_x, self.robot_y = coord
+        row, col = self.xyToRowCol(coord)
+        self.myMap[row][col] = -1
 
         # Create the maze
         for row in range(len(self.myMap)):
             for col in range(len(self.myMap[0])):
-                if self.myMap[row][col] == 1:
-                    wall = arcade.Sprite(CRATE, SPRITE_SCALING_BOX)
-                    wall.center_x, wall.center_y = self.rowColToPixelPos([row, col])
-                    self.wall_list.append(wall)
-
-        # Create the physics engine. Give it a reference to the player, and
-        # the walls we can't run into.
-        self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
+                if self.myMap[row][col] == WALL:
+                    x, y = self.rowColToPixelPos([row, col])
+                    arcade.draw_rectangle_filled(x, y, BOX_SIZE, BOX_SIZE, arcade.color.BLUE)
 
 
     def on_draw(self):
@@ -207,12 +236,18 @@ class MyGame(arcade.Window):
 
     def draw_game(self):
         """Draw the main game"""
-        # Draw squares where Picobot has visited
+        # Draw squares where Picobot has visited and the walls
         for row in range(len(self.myMap)):
             for col in range(len(self.myMap[0])):
-                if self.myMap[row][col] == 2:
+                if self.myMap[row][col] == VISITED:
                     x, y = self.rowColToPixelPos([row, col])
                     arcade.draw_rectangle_filled(x, y, BOX_SIZE, BOX_SIZE, arcade.color.GREEN)
+                elif self.myMap[row][col] == WALL:
+                    x, y = self.rowColToPixelPos([row, col])
+                    arcade.draw_rectangle_filled(x, y, BOX_SIZE, BOX_SIZE, arcade.color.BLUE)
+                elif self.myMap[row][col] == ROBOT:
+                    x, y = self.rowColToPixelPos([row, col])
+                    arcade.draw_rectangle_filled(x, y, BOX_SIZE, BOX_SIZE, arcade.color.RED)
         
         # Draw the Grid
         # Draw horizontal lines
@@ -223,9 +258,6 @@ class MyGame(arcade.Window):
         for col in range(0, self.WORLD_WIDTH + 1, BOX_SIZE):
             arcade.draw_line(col, 0, col, self.WORLD_HEIGHT, arcade.color.BLACK, 2)
 
-        self.wall_list.draw()
-        self.player_list.draw()
-
 
     def draw_game_over(self):
         """Draw the ending screen"""
@@ -234,12 +266,9 @@ class MyGame(arcade.Window):
 
     def update(self, delta_time):
         """updates the position of picobot"""
-        self.physics_engine.update()
-        x = self.player_sprite.center_x
-        y = self.player_sprite.center_y
-        
+
         # convert coord to x,y
-        coord = self.pixelPosToxy([x, y])
+        coord = (self.robot_x, self.robot_y)
         self.markVisited(coord)
 
         self.step()
@@ -262,10 +291,10 @@ class MyGame(arcade.Window):
         position = ""
 
         # convert center_x and center_y to a row/column in the map
-        x = self.player_sprite.center_x
-        y = self.player_sprite.center_y
+        x = self.robot_x
+        y = self.robot_y
         
-        row, col = self.pixelPosToRowCol([x, y])
+        row, col = self.xyToRowCol([x, y])
 
         # Look North
         if self.myMap[row - 1][col] == 1:
@@ -303,7 +332,7 @@ class MyGame(arcade.Window):
         direction, newState = self.getMove(self.state, surroundings)
         self.state = newState
 
-        row, col = self.pixelPosToRowCol([self.player_sprite.center_x, self.player_sprite.center_y])
+        row, col = self.xyToRowCol([self.robot_x, self.robot_y])
 
         # Change self.player_sprite.center_x and self.player_sprite.center_y based on direction
         # check if bot can move that direction
@@ -329,7 +358,8 @@ class MyGame(arcade.Window):
                 print("Cannot move South. Error in instructions.")
 
         # Move Picobot to the new position
-        self.player_sprite.center_x, self.player_sprite.center_y = self.rowColToPixelPos([row, col])
+        self.myMap[row][col] = ROBOT
+        self.robot_x, self.robot_y = self.rowColToxy([row, col])
 
     def convertPicobotToPython(self):
         """Takes in instructions as a long string and returns a dictionary of these rules"""
@@ -417,35 +447,6 @@ class MyGame(arcade.Window):
         row, col = self.xyToRowCol(coordinate)
         self.myMap[row][col] = 2
 
-
-    #-----------Coordinate system conversion functions-------------
-    def xyToRowCol(self, coordinate):
-        """Takes in a (x, y) and returns the equivalent (row, col)"""
-        row = int(len(self.myMap) - 1 - coordinate[1])
-        col = int(coordinate[0])
-        return (row, col)
-
-    def pixelPosToxy(self, coordinate):
-        """Takes in (center_x, center_y) and return (x, y)"""
-        return list(map((lambda S: int((S - (BOX_SIZE / 2)) / BOX_SIZE )), coordinate))
-
-    def pixelPosToRowCol(self, coordinate):
-        """Takes in (center_x, center_y) and returns (row, col)"""
-        xy = self.pixelPosToxy(coordinate)
-        return self.xyToRowCol(xy)
-
-    def xyToPixelPos(self, coordinate):
-        """Takes in (x, y) and returns (center_x, center_y)"""
-        pixel_x = BOX_SIZE // 2 + coordinate[0] * BOX_SIZE
-        pixel_y = BOX_SIZE // 2 + coordinate[1] * BOX_SIZE
-        return (pixel_x, pixel_y)
-
-    def rowColToPixelPos(self, coordinate):
-        """Takes in a (row, col) and returns (center_x, center_y)"""
-        row, col = coordinate
-        pixel_x = col * BOX_SIZE + BOX_SIZE // 2
-        pixel_y = (len(self.myMap[0]) - 1 - row) * BOX_SIZE + BOX_SIZE // 2
-        return (pixel_x, pixel_y)
 
 
 def main():
