@@ -1,5 +1,13 @@
 # TO DO
 # Why does it slow down as time goes on? Can I fix this?
+
+# Things to Add
+
+# User interface! So things like:
+# Place to put in Picobot instructions
+# Way to restart
+# Place that displays errors (like oops I can't go that way)
+# Add a menu to choose which map you want
 #--------Picobot Interpreter--------
 
 import arcade
