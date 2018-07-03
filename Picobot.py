@@ -47,6 +47,9 @@ B1Y = 2*BOX_SIZE
 B2X = 7.5 * BOX_SIZE
 B2Y = 2*BOX_SIZE
 
+B3X = 11.5 * BOX_SIZE
+B3Y = 2*BOX_SIZE
+
 B_BASE = 3 * BOX_SIZE
 B_HEIGHT = 2 * BOX_SIZE
 
@@ -153,6 +156,7 @@ class MyGame(arcade.Window):
 
         self.b1Color = B_COLOR
         self.b2Color = B_COLOR
+        self.b3Color = B_COLOR
 
         self.pause_or_play = PLAY
 
@@ -265,10 +269,15 @@ class MyGame(arcade.Window):
         arcade.draw_rectangle_filled(B1X, B1Y, B_BASE, B_HEIGHT, self.b1Color)
         arcade.draw_text("Restart", 5*BOX_SIZE / 2, 2*BOX_SIZE, arcade.color.WHITE, 12)
 
-        # Buttons to Add: pause/play, change map, enter new rules
+        # Buttons to Add: change map, enter new rules
+        
         # Pause/Play
         arcade.draw_rectangle_filled(B2X, B2Y, B_BASE, B_HEIGHT, self.b2Color)
         arcade.draw_text("Pause/Play", 12*BOX_SIZE/2, 2*BOX_SIZE, arcade.color.WHITE, 12)
+
+        # switch map
+        arcade.draw_rectangle_filled(B3X, B3Y, B_BASE, B_HEIGHT, self.b3Color)
+        arcade.draw_text("Change Map", 10*BOX_SIZE, 2*BOX_SIZE, arcade.color.WHITE, 12)
 
 
     def draw_game_over(self):
@@ -278,10 +287,7 @@ class MyGame(arcade.Window):
     def update(self, delta_time):
         """updates the position of picobot"""
 
-        if self.current_state == ZOOM_ZOOM:    
-            # convert coord to x,y
-            coord = (self.robot_x, self.robot_y)
-            self.markVisited(coord)
+        if self.current_state == ZOOM_ZOOM:
             self.step()
 
         if self.allVisited():
@@ -342,11 +348,13 @@ class MyGame(arcade.Window):
     def step(self):
         """moves Picobot one step and updates state, row, col of Picobot"""
         if self.pause_or_play == PLAY:
+            coord = [self.robot_x, self.robot_y]
+            self.markVisited(coord)
             surroundings = self.getCurrentSurroundings()
             direction, newState = self.getMove(self.state, surroundings)
             self.state = newState
 
-            row, col = self.xyToRowCol([self.robot_x, self.robot_y])
+            row, col = self.xyToRowCol(coord)
 
             # Change self.robot_x and self.robot_y based on direction
             # check if bot can move that direction
@@ -484,9 +492,11 @@ class MyGame(arcade.Window):
         elif (BOX_SIZE * 6 < x < BOX_SIZE * 9) and (BOX_SIZE < y < BOX_SIZE * 3):
             return True
 
+        elif (BOX_SIZE * 10 < x < BOX_SIZE * 13) and (BOX_SIZE < y < BOX_SIZE * 3):
+            return True
+
         else:
             return False
-
 
     def buttonHighlight(self, x, y):
         """Changes the color of the button at the indicated coordinates to be highlighted,
@@ -494,16 +504,23 @@ class MyGame(arcade.Window):
         if (BOX_SIZE * 2 < x < BOX_SIZE * 5) and (BOX_SIZE < y < BOX_SIZE * 3):
             self.b1Color = B_HIGHTLIGHT
             self.b2Color = B_COLOR
+            self.b3Color = B_COLOR
 
         elif (BOX_SIZE * 6 < x < BOX_SIZE * 9) and (BOX_SIZE < y < BOX_SIZE * 3):
             self.b2Color = B_HIGHTLIGHT
             self.b1Color = B_COLOR
+            self.b3Color = B_COLOR
 
+        elif (BOX_SIZE * 10 < x < BOX_SIZE * 13) and (BOX_SIZE < y < BOX_SIZE * 3):
+            self.b3Color = B_HIGHTLIGHT
+            self.b1Color = B_COLOR
+            self.b2Color = B_COLOR
 
     def buttonOff(self, x, y):
         """Makes sure all buttons are not highlighted"""
         self.b1Color = B_COLOR
         self.b2Color = B_COLOR
+        self.b3Color = B_COLOR
 
     def buttonPress(self, x, y):
         """Runs the correct function based on the button at (x, y)"""
@@ -512,6 +529,9 @@ class MyGame(arcade.Window):
         
         elif (BOX_SIZE * 6 < x < BOX_SIZE * 9) and (BOX_SIZE < y < BOX_SIZE * 3):
             self.pausePlay()
+        
+        elif (BOX_SIZE * 10 < x < BOX_SIZE * 13) and (BOX_SIZE < y < BOX_SIZE * 3):
+            self.changeMap()
 
     def pausePlay(self):
         """Pauses or plays the game"""
@@ -521,11 +541,13 @@ class MyGame(arcade.Window):
         elif self.pause_or_play == PAUSE:
             self.pause_or_play = PLAY
 
+    def changeMap(self):
+        """Changes the map displayed"""
+
 def main():
     window = MyGame(EMPTY_MAP, EMPTY_RULES)
     window.setup()
     arcade.run()
-
 
 if __name__ == "__main__":
     main()
