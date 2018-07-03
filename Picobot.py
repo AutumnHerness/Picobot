@@ -7,9 +7,9 @@
 # Place to put in Picobot instructions
 
 # If there's not a way to add a text input box, use user input and have a add instructions button
-# Way to restart
 # Place that displays errors (like oops I can't go that way)
 # Add a menu to choose which map you want
+# pause/play button
 #--------Picobot Interpreter--------
 
 import arcade
@@ -20,10 +20,11 @@ import copy
 POSSIBLE_CONDITIONS = ["xxxx", "Nxxx", "NExx", "NxWx", "xxxS", "xExS", "xxWS", "xExx", "xxWx"]
 POSSIBLE_MOVES = ["N", "E", "W", "S"]
 
+PAUSE = 0
+PLAY = 1
+
 # These represent levels/states so the computer knows what screen to display
 ZOOM_ZOOM = 1
-
-PAUSE = 1.5
 
 ALL_DONE = 2
 
@@ -42,6 +43,9 @@ VISITED = 2
 # Button coordinates
 B1X = 7*BOX_SIZE / 2
 B1Y = 2*BOX_SIZE
+
+B2X = 7.5 * BOX_SIZE
+B2Y = 2*BOX_SIZE
 
 B_BASE = 3 * BOX_SIZE
 B_HEIGHT = 2 * BOX_SIZE
@@ -141,15 +145,16 @@ class MyGame(arcade.Window):
         self.state = 0
         self.rules = {}
 
-        #self.randomize()
         self.rules = self.convertPicobotToPython()
-
 
         # This number is in x,y coordinates
         self.robot_x = None
         self.robot_y = None
 
         self.b1Color = B_COLOR
+        self.b2Color = B_COLOR
+
+        self.pause_or_play = PLAY
 
 
     #-----------Coordinate system conversion functions-------------
@@ -187,16 +192,6 @@ class MyGame(arcade.Window):
         """Takes in a (row, col) and returns (x, y)"""
         pixel = self.rowColToPixelPos(coordinate)
         return self.pixelPosToxy(pixel)
-
-    def randomize(self):
-        """Fill self.rules!"""
-        for state in range(5):
-            for condition in POSSIBLE_CONDITIONS:
-                newState = random.randint(0, 4)
-                newMove = random.choice(POSSIBLE_MOVES)
-                while newMove in condition:
-                    newMove = random.choice(POSSIBLE_MOVES)
-                self.rules[(state, condition)] = (newMove, newState)
     
     def setup(self):
         # Set the background color
@@ -223,6 +218,7 @@ class MyGame(arcade.Window):
         row, col = self.xyToRowCol(coord)
         self.myMap[row][col] = -1
 
+        self.pause_or_play = PLAY
 
     def on_draw(self):
         arcade.start_render()
@@ -268,6 +264,11 @@ class MyGame(arcade.Window):
         # Draw the menu buttons
         arcade.draw_rectangle_filled(B1X, B1Y, B_BASE, B_HEIGHT, self.b1Color)
         arcade.draw_text("Restart", 5*BOX_SIZE / 2, 2*BOX_SIZE, arcade.color.WHITE, 12)
+
+        # Buttons to Add: pause/play, change map, enter new rules
+        # Pause/Play
+        arcade.draw_rectangle_filled(B2X, B2Y, B_BASE, B_HEIGHT, self.b2Color)
+        arcade.draw_text("Pause/Play", 12*BOX_SIZE/2, 2*BOX_SIZE, arcade.color.WHITE, 12)
 
 
     def draw_game_over(self):
@@ -340,41 +341,43 @@ class MyGame(arcade.Window):
     
     def step(self):
         """moves Picobot one step and updates state, row, col of Picobot"""
-        surroundings = self.getCurrentSurroundings()
-        direction, newState = self.getMove(self.state, surroundings)
-        self.state = newState
+        if self.pause_or_play == PLAY:
+            surroundings = self.getCurrentSurroundings()
+            direction, newState = self.getMove(self.state, surroundings)
+            self.state = newState
 
-        row, col = self.xyToRowCol([self.robot_x, self.robot_y])
+            row, col = self.xyToRowCol([self.robot_x, self.robot_y])
 
-        # Change self.player_sprite.center_x and self.player_sprite.center_y based on direction
-        # check if bot can move that direction
-        if direction == "N":
-            if surroundings[0] == "x":
-                row += -1
-            else:
-                print("Cannot move North. Error in instructions.")
-        elif direction == "E":
-            if surroundings[1] == "x":
-                col += 1
-            else:
-                print("Cannot move East. Error in instructions.")
-        elif direction == "W":
-            if surroundings[2] == "x":
-                col += -1
-            else:
-                print("Cannot move West. Error in instructions.")
-        elif direction == "S":
-            if surroundings[3] == "x":
-                row += 1
-            else:
-                print("Cannot move South. Error in instructions.")
+            # Change self.robot_x and self.robot_y based on direction
+            # check if bot can move that direction
+            if direction == "N":
+                if surroundings[0] == "x":
+                    row += -1
+                else:
+                    print("Cannot move North. Error in instructions.")
+            elif direction == "E":
+                if surroundings[1] == "x":
+                    col += 1
+                else:
+                    print("Cannot move East. Error in instructions.")
+            elif direction == "W":
+                if surroundings[2] == "x":
+                    col += -1
+                else:
+                    print("Cannot move West. Error in instructions.")
+            elif direction == "S":
+                if surroundings[3] == "x":
+                    row += 1
+                else:
+                    print("Cannot move South. Error in instructions.")
 
-        # Move Picobot to the new position
-        self.myMap[row][col] = ROBOT
-        self.robot_x, self.robot_y = self.rowColToxy([row, col])
+            # Move Picobot to the new position
+            self.myMap[row][col] = ROBOT
+            self.robot_x, self.robot_y = self.rowColToxy([row, col])
 
     def convertPicobotToPython(self):
         """Takes in instructions as a long string and returns a dictionary of these rules"""
+        # This assumes that the formatting of the rules is perfect, and that there's no comments
         ruleDict = {}
         # Each instruction is 14 characters long (including /n)
         instructions = self.myRules
@@ -477,6 +480,9 @@ class MyGame(arcade.Window):
         # Check button 1
         if (BOX_SIZE * 2 < x < BOX_SIZE * 5) and (BOX_SIZE < y < BOX_SIZE * 3):
             return True
+        
+        elif (BOX_SIZE * 6 < x < BOX_SIZE * 9) and (BOX_SIZE < y < BOX_SIZE * 3):
+            return True
 
         else:
             return False
@@ -487,16 +493,33 @@ class MyGame(arcade.Window):
         makes the rest of the buttons unhighlighted"""
         if (BOX_SIZE * 2 < x < BOX_SIZE * 5) and (BOX_SIZE < y < BOX_SIZE * 3):
             self.b1Color = B_HIGHTLIGHT
+            self.b2Color = B_COLOR
+
+        elif (BOX_SIZE * 6 < x < BOX_SIZE * 9) and (BOX_SIZE < y < BOX_SIZE * 3):
+            self.b2Color = B_HIGHTLIGHT
+            self.b1Color = B_COLOR
 
 
     def buttonOff(self, x, y):
         """Makes sure all buttons are not highlighted"""
         self.b1Color = B_COLOR
+        self.b2Color = B_COLOR
 
     def buttonPress(self, x, y):
         """Runs the correct function based on the button at (x, y)"""
         if (BOX_SIZE * 2 < x < BOX_SIZE * 5) and (BOX_SIZE < y < BOX_SIZE * 3):
             self.setup()
+        
+        elif (BOX_SIZE * 6 < x < BOX_SIZE * 9) and (BOX_SIZE < y < BOX_SIZE * 3):
+            self.pausePlay()
+
+    def pausePlay(self):
+        """Pauses or plays the game"""
+        if self.pause_or_play == PLAY:
+            self.pause_or_play = PAUSE
+
+        elif self.pause_or_play == PAUSE:
+            self.pause_or_play = PLAY
 
 def main():
     window = MyGame(EMPTY_MAP, EMPTY_RULES)
