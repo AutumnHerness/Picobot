@@ -16,15 +16,11 @@ import random
 import copy
 
 # --- Constants ---
-POSSIBLE_CONDITIONS = ["xxxx", "Nxxx", "NExx", "NxWx", "xxxS", "xExS", "xxWS", "xExx", "xxWx"]
-POSSIBLE_MOVES = ["N", "E", "W", "S"]
-
 PAUSE = 0
 PLAY = 1
 
 # These represent levels/states so the computer knows what screen to display
 ZOOM_ZOOM = 1
-
 ALL_DONE = 2
 
 BUTTON_SPACE = 128
@@ -134,12 +130,12 @@ class MyGame(arcade.Window):
 
         self.NUM_ROWS = len(self.myMap)
         self.NUM_COLUMNS = len(self.myMap[0])
+        
         # Call the parent class initializer
-
         self.WORLD_WIDTH = BOX_SIZE * (self.NUM_ROWS)
         self.WORLD_HEIGHT = BOX_SIZE * (self.NUM_COLUMNS) + BUTTON_SPACE
-        super().__init__(self.WORLD_WIDTH, self.WORLD_HEIGHT, "Picobot!")
 
+        super().__init__(self.WORLD_WIDTH, self.WORLD_HEIGHT, "Picobot!")
 
         self.background = None
 
@@ -197,6 +193,7 @@ class MyGame(arcade.Window):
         return self.pixelPosToxy(pixel)
     
     def setup(self):
+        """Used as a reset to Picobot defaults"""
         # Set the background color
         arcade.set_background_color((135, 205, 255))
 
@@ -224,6 +221,7 @@ class MyGame(arcade.Window):
         self.pause_or_play = PLAY
 
     def on_draw(self):
+        """draw the graphics"""
         arcade.start_render()
 
         self.draw_game()
@@ -251,7 +249,6 @@ class MyGame(arcade.Window):
                     x, y = self.rowColToPixelPos([row, col])
                     arcade.draw_rectangle_filled(x, y, BOX_SIZE, BOX_SIZE, arcade.color.WHITE)
 
-        
         # Draw the Grid
         # Draw horizontal lines
         for row in range(0, self.WORLD_HEIGHT + 1, BOX_SIZE):
@@ -268,7 +265,7 @@ class MyGame(arcade.Window):
         arcade.draw_rectangle_filled(B1X, B1Y, B_BASE, B_HEIGHT, self.b1Color)
         arcade.draw_text("Restart", 5*BOX_SIZE / 2, 2*BOX_SIZE, arcade.color.WHITE, 12)
 
-        # Buttons to Add: change map, enter new rules
+        # Buttons to Add: enter new rules
         
         # Pause/Play
         arcade.draw_rectangle_filled(B2X, B2Y, B_BASE, B_HEIGHT, self.b2Color)
@@ -516,7 +513,7 @@ class MyGame(arcade.Window):
 
         elif (BOX_SIZE * 10 < x < BOX_SIZE * 13) and (BOX_SIZE < y < BOX_SIZE * 3):
             self.b3Color = B_HIGHTLIGHT
-            
+
             self.b1Color = B_COLOR
             self.b2Color = B_COLOR
 
