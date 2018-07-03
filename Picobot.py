@@ -24,9 +24,9 @@ ZOOM_ZOOM = 1
 
 PAUSE = 1.5
 
-ALL_DONE = 
+ALL_DONE = 2
 
-BUTTON_SPACE = 300
+BUTTON_SPACE = 128
 
 # Note: current images of CRATE and BOT are each 64px by 64px
 SCALING_BOX = 1 / 2
@@ -36,6 +36,16 @@ BOX_SIZE = 64 // 2
 ROBOT = -1
 WALL = 1
 VISITED = 2
+
+# This could be converted into BOX_SIZE
+B1X = 7*BOX_SIZE / 2
+B1Y = 2*BOX_SIZE
+
+B_BASE = 3 * BOX_SIZE
+B_HEIGHT = 2 * BOX_SIZE
+
+B_COLOR = arcade.color.RED
+B_HIGHTLIGHT = (239, 146, 146)
 
 MAZE_MAP = [
    [ 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ],
@@ -136,6 +146,8 @@ class MyGame(arcade.Window):
         self.robot_x = None
         self.robot_y = None
 
+        self.b1Color = B_COLOR
+
 
     #-----------Coordinate system conversion functions-------------
     def xyToRowCol(self, coordinate):
@@ -146,7 +158,9 @@ class MyGame(arcade.Window):
 
     def pixelPosToxy(self, coordinate):
         """Takes in (center_x, center_y) and return (x, y)"""
-        return list(map((lambda S: int((S - (BOX_SIZE / 2)) / BOX_SIZE )), coordinate))
+        x = (coordinate[0] - BOX_SIZE / 2)/BOX_SIZE
+        y = (coordinate[1] - BOX_SIZE / 2 - BUTTON_SPACE)/BOX_SIZE
+        return (x, y)
 
     def pixelPosToRowCol(self, coordinate):
         """Takes in (center_x, center_y) and returns (row, col)"""
@@ -155,15 +169,15 @@ class MyGame(arcade.Window):
 
     def xyToPixelPos(self, coordinate):
         """Takes in (x, y) and returns (center_x, center_y)"""
-        pixel_x = BOX_SIZE // 2 + coordinate[0] * BOX_SIZE
-        pixel_y = BOX_SIZE // 2 + coordinate[1] * BOX_SIZE
+        pixel_x = BOX_SIZE / 2 + coordinate[0] * BOX_SIZE
+        pixel_y = BOX_SIZE / 2 + coordinate[1] * BOX_SIZE + BUTTON_SPACE
         return (pixel_x, pixel_y)
 
     def rowColToPixelPos(self, coordinate):
         """Takes in a (row, col) and returns (center_x, center_y)"""
         row, col = coordinate
         pixel_x = col * BOX_SIZE + BOX_SIZE // 2
-        pixel_y = (len(self.myMap[0]) - 1 - row) * BOX_SIZE + BOX_SIZE // 2
+        pixel_y = (len(self.myMap[0]) - 1 - row) * BOX_SIZE + BOX_SIZE / 2 + BUTTON_SPACE
         return (pixel_x, pixel_y)
 
     def rowColToxy(self, coordinate):
@@ -209,11 +223,7 @@ class MyGame(arcade.Window):
     def on_draw(self):
         arcade.start_render()
 
-        if self.current_state == ZOOM_ZOOM:
-            self.draw_game()
-
-        elif self.current_state == ALL_DONE:
-            self.draw_game_over()
+        self.draw_game()
 
     def draw_game(self):
         """Draw the main game"""
@@ -238,17 +248,23 @@ class MyGame(arcade.Window):
         # Draw the Grid
         # Draw horizontal lines
         for row in range(0, self.WORLD_HEIGHT + 1, BOX_SIZE):
-            arcade.draw_line(0, row, self.WORLD_WIDTH, row, arcade.color.BLACK, 2)
+            arcade.draw_line(0, row, self.WORLD_WIDTH, row, arcade.color.BLACK, 1)
 
         # Draw horizontal lines
         for col in range(0, self.WORLD_WIDTH + 1, BOX_SIZE):
-            arcade.draw_line(col, 0, col, self.WORLD_HEIGHT, arcade.color.BLACK, 2)
+            arcade.draw_line(col, 0, col, self.WORLD_HEIGHT, arcade.color.BLACK, 1)
+
+        if self.current_state == ALL_DONE:
+            self.draw_game_over()
+
+        # Draw the menu buttons
+        arcade.draw_rectangle_filled(B1X, B1Y, B_BASE, B_HEIGHT, self.b1Color)
+        arcade.draw_text("Restart", 5*BOX_SIZE / 2, 2*BOX_SIZE, arcade.color.WHITE, 12)
 
 
     def draw_game_over(self):
         """Draw the ending screen"""
-        arcade.draw_text("Congratulations!", 200, 400, arcade.color.WHITE, 54)
-
+        arcade.draw_text("Congratulations!", 100, 400, arcade.color.WHITE, 54)
 
     def update(self, delta_time):
         """updates the position of picobot"""
@@ -260,6 +276,8 @@ class MyGame(arcade.Window):
             self.step()
 
         if self.allVisited():
+            coord = (self.robot_x, self.robot_y)
+            self.markVisited(coord)
             self.current_state = ALL_DONE
 
     def allVisited(self):
@@ -432,6 +450,46 @@ class MyGame(arcade.Window):
         """Takes in (x, y), Returns True if the given coordinate has been visited in the given maze"""
         row, col = self.xyToRowCol(coordinate)
         self.myMap[row][col] = 2
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        """handles mouse clicks"""
+        if self.onButton(x, y):
+            self.buttonPress(x, y)
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        """handles mouse motion"""
+        if self.onButton(x, y):
+            self.buttonHighlight(x, y)
+        else:
+            self.buttonOff(x, y)
+
+    def onButton(self, x, y):
+        """Returns True if inputted coordinates is on a button"""
+
+        # Check button 1
+        if (BOX_SIZE * 2 < x < BOX_SIZE * 5) and (BOX_SIZE < y < BOX_SIZE * 3):
+            return True
+
+        else:
+            return False
+
+
+    def buttonHighlight(self, x, y):
+        """Changes the color of the button at the indicated coordinates to be highlighted,
+        makes the rest of the buttons unhighlighted"""
+        if (BOX_SIZE * 2 < x < BOX_SIZE * 5) and (BOX_SIZE < y < BOX_SIZE * 3):
+            self.b1Color = B_HIGHTLIGHT
+
+
+    def buttonOff(self, x, y):
+        """Makes sure all buttons are not highlighted"""
+        self.b1Color = B_COLOR
+
+    def buttonPress(self, x, y):
+        """Runs the correct function based on the button at (x, y)"""
+        if (BOX_SIZE * 2 < x < BOX_SIZE * 5) and (BOX_SIZE < y < BOX_SIZE * 3):
+            self.setup()
+
 
 
 
