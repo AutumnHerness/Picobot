@@ -14,6 +14,7 @@
 
 import arcade
 import random
+import copy
 
 # --- Constants ---
 POSSIBLE_CONDITIONS = ["xxxx", "Nxxx", "NExx", "NxWx", "xxxS", "xExS", "xxWS", "xExx", "xxWx"]
@@ -31,14 +32,14 @@ BUTTON_SPACE = 128
 # Note: current images of CRATE and BOT are each 64px by 64px
 SCALING_BOX = 1 / 2
 
-BOX_SIZE = 64 // 2
+BOX_SIZE = int(SCALING_BOX * 64)
 
 ROBOT = -1
 EMPTY = 0
 WALL = 1
 VISITED = 2
 
-# This could be converted into BOX_SIZE
+# Button coordinates
 B1X = 7*BOX_SIZE / 2
 B1Y = 2*BOX_SIZE
 
@@ -121,9 +122,9 @@ class MyGame(arcade.Window):
         """ Initializer """
 
 
-        self.myMap = myMap.copy()
+        self.myMap = copy.deepcopy(myMap)
         self.myRules = myRules
-        self.myMapCopy = myMap.copy()
+        self.myMapCopy = copy.deepcopy(myMap)
 
         self.NUM_ROWS = len(self.myMap)
         self.NUM_COLUMNS = len(self.myMap[0])
@@ -139,6 +140,7 @@ class MyGame(arcade.Window):
         # Picobot specific!
         self.state = 0
         self.rules = {}
+
         #self.randomize()
         self.rules = self.convertPicobotToPython()
 
@@ -202,9 +204,10 @@ class MyGame(arcade.Window):
 
         # Set opening screen
         self.current_state = ZOOM_ZOOM
+        self.state = 0
 
         # Reset start map
-        self.myMap = self.myMapCopy.copy()
+        self.myMap = copy.deepcopy(self.myMapCopy)
 
         rand_x = random.randint(1,len(self.myMap[0]) - 2)
         rand_y = random.randint(1, len(self.myMap) - 2)
