@@ -34,6 +34,7 @@ SCALING_BOX = 1 / 2
 BOX_SIZE = 64 // 2
 
 ROBOT = -1
+EMPTY = 0
 WALL = 1
 VISITED = 2
 
@@ -243,6 +244,10 @@ class MyGame(arcade.Window):
                     x, y = self.rowColToPixelPos([row, col])
                     bot_image = arcade.load_texture(BOT)
                     arcade.draw_texture_rectangle(x, y, SCALING_BOX * bot_image.width, SCALING_BOX * bot_image.height, bot_image)
+
+                elif self.myMap[row][col] == EMPTY:
+                    x, y = self.rowColToPixelPos([row, col])
+                    arcade.draw_rectangle_filled(x, y, BOX_SIZE, BOX_SIZE, arcade.color.WHITE)
 
         
         # Draw the Grid
@@ -489,9 +494,6 @@ class MyGame(arcade.Window):
         """Runs the correct function based on the button at (x, y)"""
         if (BOX_SIZE * 2 < x < BOX_SIZE * 5) and (BOX_SIZE < y < BOX_SIZE * 3):
             self.setup()
-
-
-
 
 def main():
     window = MyGame(EMPTY_MAP, EMPTY_RULES)

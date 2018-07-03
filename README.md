@@ -1,10 +1,10 @@
-# PicobotArcade
-Implementation of Picobot using Arcade for CS 5 at Harvey Mudd College
+# Picobot
+Implementation of Picobot using Arcade in python for CS 5 at Harvey Mudd College.
 
-*Language: Python
+* Language: Python
 
-*Using Arcade library
+* Using Arcade library
 
-*Interprets English "rules" and it animates Picobot's trajectory accordingly.
+* Interprets English "rules" and it animates Picobot's trajectory accordingly.
 
-*Also, there is an adaptive Picobot instructions AI.
+* Also, there is an adaptive Picobot instructions AI.
