@@ -9,7 +9,6 @@
 # If there's not a way to add a text input box, use user input and have a add instructions button
 # Place that displays errors (like oops I can't go that way)
 # Add a menu to choose which map you want
-# pause/play button
 #--------Picobot Interpreter--------
 
 import arcade
@@ -489,9 +488,11 @@ class MyGame(arcade.Window):
         if (BOX_SIZE * 2 < x < BOX_SIZE * 5) and (BOX_SIZE < y < BOX_SIZE * 3):
             return True
         
+        # Check button 2
         elif (BOX_SIZE * 6 < x < BOX_SIZE * 9) and (BOX_SIZE < y < BOX_SIZE * 3):
             return True
 
+        # Check button 3
         elif (BOX_SIZE * 10 < x < BOX_SIZE * 13) and (BOX_SIZE < y < BOX_SIZE * 3):
             return True
 
@@ -503,16 +504,19 @@ class MyGame(arcade.Window):
         makes the rest of the buttons unhighlighted"""
         if (BOX_SIZE * 2 < x < BOX_SIZE * 5) and (BOX_SIZE < y < BOX_SIZE * 3):
             self.b1Color = B_HIGHTLIGHT
+
             self.b2Color = B_COLOR
             self.b3Color = B_COLOR
 
         elif (BOX_SIZE * 6 < x < BOX_SIZE * 9) and (BOX_SIZE < y < BOX_SIZE * 3):
             self.b2Color = B_HIGHTLIGHT
+
             self.b1Color = B_COLOR
             self.b3Color = B_COLOR
 
         elif (BOX_SIZE * 10 < x < BOX_SIZE * 13) and (BOX_SIZE < y < BOX_SIZE * 3):
             self.b3Color = B_HIGHTLIGHT
+            
             self.b1Color = B_COLOR
             self.b2Color = B_COLOR
 
