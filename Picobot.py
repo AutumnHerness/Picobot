@@ -1,5 +1,6 @@
 # TO DO
-# Why does it slow down as time goes on? Can I fix this?
+# Why does it slow down as time goes on? Can I fix this? YES
+# New changes to add: be able to change speed of Picobot and also have the buttons be more reactive by changing how often the code refreshes
 
 # Things to Add
 
@@ -9,6 +10,7 @@
 # If there's not a way to add a text input box, use user input and have a add instructions button
 # Place that displays errors (like oops I can't go that way)
 # Add a menu to choose which map you want
+
 #--------Picobot Interpreter--------
 
 import arcade
@@ -122,8 +124,6 @@ class MyGame(arcade.Window):
 
     def __init__(self, myMap, myRules):
         """ Initializer """
-
-
         self.myMap = copy.deepcopy(myMap)
         self.myRules = myRules
         self.myMapCopy = copy.deepcopy(myMap)
@@ -152,8 +152,12 @@ class MyGame(arcade.Window):
         self.b1Color = B_COLOR
         self.b2Color = B_COLOR
         self.b3Color = B_COLOR
+        self.b4Color = B_COLOR
 
         self.pause_or_play = PLAY
+
+        self.counter = 0
+        self.bot_level = 1
 
 
     #-----------Coordinate system conversion functions-------------
@@ -283,7 +287,9 @@ class MyGame(arcade.Window):
     def update(self, delta_time):
         """updates the position of picobot"""
 
-        if self.current_state == ZOOM_ZOOM:
+        self.counter += 1
+
+        if self.current_state == ZOOM_ZOOM and self.counter % self.bot_level == 0:
             self.step()
 
         if self.allVisited():
@@ -548,6 +554,7 @@ class MyGame(arcade.Window):
 def main():
     window = MyGame(EMPTY_MAP, EMPTY_RULES)
     window.setup()
+    window.set_update_rate(1/80)
     arcade.run()
 
 if __name__ == "__main__":
